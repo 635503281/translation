@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Test HTML</title>
+        <style>
+            html {
+                width: 100%;
+                height: 100%;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                overflow: hidden;
+                margin: 0;
+                padding: 16px;
+                box-sizing: border-box;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }
+            .header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 12px;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 24px;
+            }
+            .header-actions {
+                display: flex;
+                gap: 8px;
+            }
+            .header-actions button {
+                padding: 6px 14px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                background: #fff;
+                cursor: pointer;
+                font-size: 13px;
+                transition: all 0.15s;
+            }
+            .header-actions button:hover {
+                background: #f5f5f5;
+                border-color: #999;
+            }
+            .header-actions .btn-paste {
+                background: #4a90d9;
+                color: #fff;
+                border-color: #4a90d9;
+            }
+            .header-actions .btn-paste:hover {
+                background: #3a7bc8;
+            }
+            .header-actions .btn-clear {
+                color: #e53935;
+                border-color: #e53935;
+            }
+            .header-actions .btn-clear:hover {
+                background: #fef0f0;
+            }
+            #content {
+                flex: 1;
+                overflow: auto;
+                min-height: 200px;
+                border: 2px dashed #ccc;
+                padding: 16px;
+                border-radius: 8px;
+                outline: none;
+                transition: border-color 0.2s, background-color 0.2s;
+                position: relative;
+            }
+            #content div {
+                white-space: break-spaces!important;
+            }
+            #content:empty::before {
+                content: '点击此处后按 Ctrl+V 粘贴内容';
+                color: #999;
+                font-size: 14px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+            }
+            #content:focus {
+                border-color: #4a90d9;
+                background-color: #f0f7ff;
+            }
+            #content.drag-over {
+                border-color: #4a90d9;
+                background-color: #e8f0fe;
+            }
+            .pasted-block {
+                border-bottom: 1px solid #e0e0e0;
+                padding: 8px 0;
+                margin-bottom: 8px;
+            }
+            .pasted-block:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+            #content p {
+                margin: 0;
+                padding: 0;
+            }
+            #content p:first-child {
+                margin-top: 0;
+            }
+            #content p:last-child {
+                margin-bottom: 0;
+            }
+            #content p:before {
+                content: '';
+                display: block;
+                height: 1px;
+                background-color: #000;
+                margin: 10px 0;
+            }
+            #content p:after {
+                content: '';
+                display: block;
+                height: 1px;
+                background-color: #000;
+                margin: 10px 0;
+            }
+            #content p:before {
+                content: '';
+                display: block;
+                height: 1px;
+                background-color: #000;
+                margin: 10px 0;
+            }
+            #content p:after {
+                content: '';
+                display: block;
+                height: 1px;
+                background-color: #000;
+                margin: 10px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Test HTML</h1>
+            <div class="header-actions">
+                <button class="btn-paste" id="btnPaste">📋 粘贴</button>
+                <button class="btn-clear" id="btnClear">🗑 清空</button>
+            </div>
+        </div>
+        <div id="content" tabindex="0"></div>
+
+        <script>
+            const content = document.getElementById('content');
+            const btnPaste = document.getElementById('btnPaste');
+            const btnClear = document.getElementById('btnClear');
+
+            function appendClipboard(html, text) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pasted-block';
+                if (html) {
+                    wrapper.innerHTML = html;
+                } else if (text) {
+                    wrapper.textContent = text;
+                }
+                if (wrapper.childNodes.length > 0) {
+                    content.appendChild(wrapper);
+                }
+            }
+
+            btnPaste.addEventListener('click', async () => {
+                try {
+                    const items = await navigator.clipboard.read();
+                    let html = '';
+                    let text = '';
+                    for (const item of items) {
+                        if (item.types.includes('text/html')) {
+                            const blob = await item.getType('text/html');
+                            html = await blob.text();
+                        }
+                        if (item.types.includes('text/plain')) {
+                            const blob = await item.getType('text/plain');
+                            text = await blob.text();
+                        }
+                    }
+                    appendClipboard(html, text);
+                } catch (err) {
+                    const text = await navigator.clipboard.readText().catch(() => '');
+                    if (text) appendClipboard('', text);
+                }
+            });
+
+            btnClear.addEventListener('click', () => {
+                content.innerHTML = '';
+            });
+
+            content.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const html = e.clipboardData.getData('text/html');
+                const text = e.clipboardData.getData('text/plain');
+                appendClipboard(html, text);
+            });
+
+            content.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                content.classList.add('drag-over');
+            });
+
+            content.addEventListener('dragleave', () => {
+                content.classList.remove('drag-over');
+            });
+
+            content.addEventListener('drop', (e) => {
+                e.preventDefault();
+                content.classList.remove('drag-over');
+                const html = e.dataTransfer.getData('text/html');
+                const text = e.dataTransfer.getData('text/plain');
+                appendClipboard(html, text);
+            });
+
+
+            window.onload = function(e) {
+                console.log('页面加载完毕');
+            }
+        </script>
+    </body>
+</html>
